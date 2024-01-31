@@ -4,7 +4,7 @@ version:
 Author: wangjl
 Date: 2021-03-22 14:47:47
 LastEditors: pystar360 pystar360@py-star.com
-LastEditTime: 2024-01-30 17:58:17
+LastEditTime: 2024-01-31 09:10:55
 '''
 
 import torch
@@ -268,7 +268,8 @@ if __name__ == '__main__':
         net = models.resnet18(num_classes=args.class_per_task).to(device)
         normalizer = InputNormalize(
             new_mean=torch.tensor([0.485, 0.456, 0.406]),
-            new_std=torch.tensor([0.229, 0.224, 0.225])
+            new_std=torch.tensor([0.229, 0.224, 0.225]),
+            device=device
         )
     elif args.dataset == 'mycifar30':
         net = ResNet18(num_classes=args.class_per_task).to(device)
@@ -281,7 +282,8 @@ if __name__ == '__main__':
         net = AlexNet(num_classes=args.class_per_task).to(device)
         normalizer = InputNormalize(
             new_mean=torch.tensor([0.5, 0.5, 0.5]),
-            new_std=torch.tensor([0.5, 0.5, 0.5])
+            new_std=torch.tensor([0.5, 0.5, 0.5]),
+            device=device
         )
     else:
         raise NameError("illegal dataset.")
