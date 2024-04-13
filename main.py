@@ -4,7 +4,7 @@ version:
 Author: wangjl
 Date: 2021-03-22 14:47:47
 LastEditors: pystar360 pystar360@py-star.com
-LastEditTime: 2024-01-31 09:10:55
+LastEditTime: 2024-02-05 21:58:24
 '''
 
 import torch
@@ -101,7 +101,7 @@ def train(epoch):
 
         if args.kd and sess > 0:
             with torch.no_grad():
-                old_output = model(normalizer(data))
+                old_output = model(data)
                 c1 += old_output.max(1)[1].eq(tar).sum().item()
                 t1 += old_output.shape[0]
             p = old_output.softmax(dim=1)
@@ -113,7 +113,7 @@ def train(epoch):
                 aug_data, aug_tar = deepcopy(data[private_idx]), deepcopy(tar[private_idx])
 
                 # for private domain data, ce loss
-                output = net(normalizer(aug_data))
+                output = net(aug_data)
                 loss1 = criterion(output, aug_tar)
                 pre = output.max(1)[1]
                 correct += pre.eq(aug_tar).sum().item()
@@ -125,7 +125,7 @@ def train(epoch):
                 aug_data = torch.clamp(aug_data+random_noise, min=0, max=1)
                 aug_data.requires_grad_(True)
                 for _ in range(args.iters):
-                    out = model(normalizer(aug_data))
+                    out = model(aug_data)
                     img_loss = criterion(out, aug_tar)
                     grad, = torch.autograd.grad(img_loss, [aug_data])
 
@@ -135,7 +135,7 @@ def train(epoch):
                 # 选取符合的迁移数据
                 aug_data.detach_()
                 with torch.no_grad():
-                    aug_output = model(normalizer(aug_data))
+                    aug_output = model(aug_data)
                     if args.selected_th_p is None:
                         aug_pre = aug_output.max(1)[1]
                         selected_aug_idx = aug_pre.eq(aug_tar)
@@ -149,9 +149,9 @@ def train(epoch):
                 data = torch.cat([data[~private_idx], aug_data[selected_aug_idx]])
                 tar = torch.cat([tar[~private_idx], aug_tar[selected_aug_idx]])
                 if len(data) > 0:
-                    output1 = net(normalizer(data))   
+                    output1 = net(data)
                     with torch.no_grad():
-                        output2 = model(normalizer(data))  
+                        output2 = model(data)
                         c2 += output2.max(1)[1].eq(tar).sum().item()
                         t2 += output2.shape[0]
                         
@@ -169,9 +169,9 @@ def train(epoch):
                 loss = loss1 + loss2*args.T*args.T*args.alpha
 
             else:
-                output1 = net(normalizer(data))
+                output1 = net(data)
                 with torch.no_grad():   
-                    output2 = model(normalizer(data)) 
+                    output2 = model(data)
                 
                 log_p = (output1/args.T).log_softmax(dim=1)
                 q = (output2/args.T).softmax(dim=1)
@@ -181,7 +181,7 @@ def train(epoch):
                 correct += output1.max(1)[1].eq(tar).sum().item()
                 total += data.shape[0]
         else:
-            output = net(normalizer(data))
+            output = net(data)
             loss = criterion(output, tar)
             pre = output.max(1)[1]
             total += data.shape[0] 
@@ -217,7 +217,7 @@ def test(epoch):
             tar = tar % args.class_per_task
             
             data, tar = data.to(device), tar.to(device)
-            output = net(normalizer(data))
+            output = net(data)
             pre = output.max(1)[1]
             
             for i in range(args.num_task):
